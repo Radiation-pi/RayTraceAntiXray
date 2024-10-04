@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.vanillage.RayTraceAntiXray</groupId>
-    <artifactId>RayTraceAntiXray-parent</artifactId>
+    <artifactId>RayTraceAntiXray-Parent</artifactId>
     <version>1.15.2</version>
   </parent>
   <artifactId>RayTraceAntiXray</artifactId>
