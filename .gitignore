@@ -8,6 +8,8 @@
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 
+.idea/
+
 # Java
 # Compiled class file
 *.class
