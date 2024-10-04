@@ -1,4 +1,4 @@
-rootProject.name = "raytraceantixray"
+rootProject.name = "RayTraceAntiXray"
 
 pluginManagement {
     repositories {
