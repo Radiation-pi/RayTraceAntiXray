@@ -15,7 +15,6 @@ import com.vanillage.raytraceantixray.net.DuplexHandlerImpl;
 import com.vanillage.raytraceantixray.tasks.RayTraceCallable;
 import com.vanillage.raytraceantixray.tasks.RayTraceTimerTask;
 import com.vanillage.raytraceantixray.tasks.UpdateBukkitRunnable;
-import com.vanillage.raytraceantixray.util.BukkitUtil;
 import io.papermc.paper.configuration.WorldConfiguration.Anticheat.AntiXray;
 import io.papermc.paper.configuration.type.EngineMode;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
@@ -45,6 +44,8 @@ import java.util.concurrent.*;
 
 public final class RayTraceAntiXray extends JavaPlugin {
     // private volatile Configuration configuration;
+    private boolean folia = false;
+    private boolean leaf = false;
     private volatile boolean running = false;
     private volatile boolean timingsEnabled = false;
     private final ConcurrentMap<ClientboundLevelChunkWithLightPacket, ChunkBlocks> packetChunkBlocksCache = new MapMaker().weakKeys().makeMap();
@@ -68,17 +69,38 @@ public final class RayTraceAntiXray extends JavaPlugin {
         // configuration = config;
         // Initialize stuff.
 
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            folia = true;
+        } catch (ClassNotFoundException e) {
+
+        }
+
+        try {
+            Class.forName("org.dreeam.leaf.config.LeafConfig");
+            leaf = true;
+        } catch (ClassNotFoundException e) {
+
+        }
+
         running = true;
         // Use a combination of a tick thread (timer) and a ray trace thread pool.
         // The timer schedules tasks (a task per player) to the thread pool and ensures a common and defined tick start and end time without overlap by waiting for the thread pool to finish all tasks.
         // A scheduled thread pool with a task per player would also be possible but then there's no common tick.
         executorService = Executors.newFixedThreadPool(Math.max(config.getInt("settings.anti-xray.ray-trace-threads"), 1), new ThreadFactoryBuilder().setThreadFactory(Executors.defaultThreadFactory()).setNameFormat("RayTraceAntiXray ray trace thread %d").setDaemon(true).build());
         // Use a timer instead of a single thread scheduled executor because there is no equivalent for the timer's schedule method.
-        timer = new Timer("RayTraceAntiXray tick thread", true);
-        timer.schedule(new RayTraceTimerTask(this), 0L, Math.max(config.getLong("settings.anti-xray.ms-per-ray-trace-tick"), 1L));
+        RayTraceTimerTask rayTraceTimerTask = new RayTraceTimerTask(this);
+        long tickSpeed = Math.max(config.getLong("settings.anti-xray.ms-per-ray-trace-tick"), 1L);
+        if (leaf) {
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this, rayTraceTimerTask,0L, tickSpeed);
+        } else {
+            timer = new Timer("RayTraceAntiXray tick thread", true);
+            timer.schedule(rayTraceTimerTask, 0L, tickSpeed);
+        }
+
         updateTicks = Math.max(config.getLong("settings.anti-xray.update-ticks"), 1L);
 
-        if (!BukkitUtil.IS_FOLIA) {
+        if (!folia) {
             new UpdateBukkitRunnable(this).runTaskTimer(this, 0L, updateTicks);
         }
 
@@ -208,6 +230,10 @@ public final class RayTraceAntiXray extends JavaPlugin {
             playerChunkManager.removePlayer(p);
             playerChunkManager.addPlayer(p);
         }
+    }
+
+    public boolean isLeaf() {
+        return folia;
     }
 
     public boolean isRunning() {
