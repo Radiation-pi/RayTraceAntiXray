@@ -82,7 +82,9 @@ public final class RayTraceAntiXray extends JavaPlugin {
         } catch (ClassNotFoundException e) {
 
         }
-
+        
+        updateTicks = Math.max(config.getLong("settings.anti-xray.update-ticks"), 1L);
+        
         running = true;
         // Use a combination of a tick thread (timer) and a ray trace thread pool.
         // The timer schedules tasks (a task per player) to the thread pool and ensures a common and defined tick start and end time without overlap by waiting for the thread pool to finish all tasks.
@@ -91,14 +93,13 @@ public final class RayTraceAntiXray extends JavaPlugin {
         // Use a timer instead of a single thread scheduled executor because there is no equivalent for the timer's schedule method.
         RayTraceTimerTask rayTraceTimerTask = new RayTraceTimerTask(this);
         long tickSpeed = Math.max(config.getLong("settings.anti-xray.ms-per-ray-trace-tick"), 1L);
+        // use vt in leaf server
         if (leaf) {
-            Bukkit.getScheduler().runTaskTimerAsynchronously(this, rayTraceTimerTask,0L, tickSpeed);
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this, rayTraceTimerTask,0L, updateTicks);
         } else {
             timer = new Timer("RayTraceAntiXray tick thread", true);
             timer.schedule(rayTraceTimerTask, 0L, tickSpeed);
         }
-
-        updateTicks = Math.max(config.getLong("settings.anti-xray.update-ticks"), 1L);
 
         if (!folia) {
             new UpdateBukkitRunnable(this).runTaskTimer(this, 0L, updateTicks);
