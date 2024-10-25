@@ -157,8 +157,9 @@ public final class RayTraceAntiXray extends JavaPlugin {
                             throwable.addSuppressed(t);
                         }
                     } finally {
-                        running = false;
-                        timer.cancel();
+                        if (this.timer != null) {
+                            this.timer.cancel();
+                        }
                     }
                 } catch (Throwable t) {
                     if (throwable == null) {
